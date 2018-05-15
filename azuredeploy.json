@@ -269,7 +269,7 @@
             "forceUpdateTag": "[parameters('appDSCUpdateTagVersion')]",
             "settings": {
               "configuration": {
-                "url": "[concat(parameters('_artifactsLocation'), '/', variables('appDSCArchiveFolder'), '/', variables('appDSCArchiveFileName'))]",
+                "url": "https://raw.githubusercontent.com/sureddy1/l200_hc_templ/master/dsc/appDSC.zip",
                 "script": "appDSC.ps1",
                 "function": "Main"
               },
