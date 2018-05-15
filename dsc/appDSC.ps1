@@ -1,7 +1,7 @@
 Configuration Main
 {
 
-Param ( [string] $nodeName, [string] $webDeployPackage, [string] $certStoreName, [string]  $certDomain)
+Param ( [string] $nodeName, [string] $webDeployPackage)
 
 Import-DscResource -ModuleName PSDesiredStateConfiguration
 #Import-DscResource -ModuleName WebAdministration
@@ -87,7 +87,7 @@ Node $nodeName
         Ensure = "Present"  
         Path  = "C:\WindowsAzure\WebDeploy_amd64_en-US.msi"
         Name = "Microsoft Web Deploy 3.6"
-        ProductId = "{ED4CC1E5-043E-4157-8452-B5E533FE2BA1}"
+        ProductId = "{6773A61D-755B-4F74-95CC-97920E45E696}"
         Arguments = "ADDLOCAL=ALL"
         DependsOn = "[Script]DownloadWebDeploy"
     }
