@@ -1,0 +1,15 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "appVMName": {
+            "value": "<uniqueVMName> e.g. myTestVM1"
+        },
+        "appVMAdminUserName": {
+            "value": "<adminUsername> e.g. adminuser "
+        },
+        "appPublicIPDnsName": {
+            "value": "<DNS for the public IP> e.g. mytestvmdns"
+        }
+    }
+}

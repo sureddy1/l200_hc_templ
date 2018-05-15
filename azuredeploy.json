@@ -1,0 +1,304 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "appStorageType": {
+      "type": "string",
+      "defaultValue": "Standard_LRS",
+      "allowedValues": [
+        "Standard_LRS",
+        "Standard_ZRS",
+        "Standard_GRS",
+        "Standard_RAGRS",
+        "Premium_LRS"
+      ],
+       "metadata": {
+        "description": "Set this value for the storage account type"
+      }
+    },
+    "appVMName": {
+      "type": "string",
+      "minLength": 1,     
+       "metadata": {
+        "description": "Set this value for the VM name"
+      }
+    },
+    "appVMAdminUserName": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Set this value for the VM admin user name"
+      }
+    },
+    "appVMAdminPassword": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Set this value for the VM admin user password"
+      }
+    },
+    "appVMWindowsOSVersion": {
+      "type": "string",
+      "defaultValue": "2016-Datacenter",
+      "allowedValues": [
+        "2016-Datacenter",
+		"2016-Datacenter-with-Containers"        
+      ],
+      "metadata": {
+        "description": "Set this value for the VM Windows OS Version"
+      }
+    },
+    "appPublicIPDnsName": {
+      "type": "string",
+      "minLength": 1,
+      "metadata": {
+        "description": "Set this value for the dns name of the public ip"
+      }
+    },
+    "appDSCUpdateTagVersion": {
+      "type": "string",
+      "defaultValue": "1.0",
+      "metadata": {
+        "description": "This value must be changed from a previous deployment to ensure the extension will run"
+      }
+    },
+    "appWebPackage": {
+      "type": "string",
+      "defaultValue": "https://bitbucket.org/PrashantPratap/arm/src/master/PublishOutput.zip",
+      "metadata": {
+        "description": "Set this value for the signed uri to download the deployment package"
+      }
+    },
+    "appVMVmSize": {
+      "type": "string",
+      "defaultValue": "Standard_B2",
+      "allowedValues": [
+        "Standard_B1",
+        "Standard_B2",
+        "Standard_B4",
+        "Standard_B8"
+      ],
+      "metadata": {
+        "description": "Set this value for the VM size"
+      }
+    }
+  },
+  "variables": {
+    "appVnetPrefix": "10.0.0.0/16",
+    "appVnetSubnet1Name": "FrontEndSubNet",
+    "appVnetSubnet1Prefix": "10.0.0.0/24",
+    "appVnetSubnet2Name": "DatabaseSubNet",
+    "appVnetSubnet2Prefix": "10.0.1.0/24",
+    "appStorageName": "[concat('appstorage', uniqueString(resourceGroup().id))]",
+    "appVMImagePublisher": "MicrosoftWindowsServer",
+    "appVMImageOffer": "WindowsServer",
+    "appVMOSDiskName": "appVMOSDisk",
+    "appVMVmSize": "[parameters('appVMVmSize')]",
+    "appVMVnetID": "[resourceId('Microsoft.Network/virtualNetworks', 'appVnet')]",
+    "appVMSubnetRef": "[concat(variables('appVMVnetID'), '/subnets/', variables('appVnetSubnet1Name'))]",
+    "appVMStorageAccountContainerName": "vhds",
+    "appVMNicName": "[concat(parameters('appVMName'), 'NetworkInterface')]",
+    "appPublicIPName": "appPublicIP",
+    "appDSCArchiveFolder": "dsc",
+    "appDSCArchiveFileName": "appDSC.zip"    
+  },
+  "resources": [
+    {
+      "apiVersion": "2015-06-15",
+      "type": "Microsoft.Network/networkSecurityGroups",
+      "name": "appNetworkSecurityGroup",
+      "location": "[resourceGroup().location]",
+      "properties": {
+        "securityRules": [          
+          {
+            "name": "rdprule",
+            "properties": {
+              "description": "This rule allows traffic on port 3389 from the web",
+              "protocol": "Tcp",
+              "sourcePortRange": "*",
+              "destinationPortRange": "3389",
+              "sourceAddressPrefix": "INTERNET",
+              "destinationAddressPrefix": "10.0.0.0/24",
+              "access": "Allow",
+              "priority": 200,
+              "direction": "Inbound"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "appVnet",
+      "type": "Microsoft.Network/virtualNetworks",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/networkSecurityGroups', 'appNetworkSecurityGroup')]"
+      ],
+      "tags": {
+        "displayName": "appVnet"
+      },
+      "properties": {
+        "addressSpace": {
+          "addressPrefixes": [
+            "[variables('appVnetPrefix')]"
+          ]
+        },
+        "subnets": [
+          {
+            "name": "[variables('appVnetSubnet1Name')]",
+            "properties": {
+              "addressPrefix": "[variables('appVnetSubnet1Prefix')]",
+              "networkSecurityGroup": {
+                "id": "[resourceId('Microsoft.Network/networkSecurityGroups', 'appNetworkSecurityGroup')]"
+              }
+            }
+          },
+          {
+            "name": "[variables('appVnetSubnet2Name')]",
+            "properties": {
+              "addressPrefix": "[variables('appVnetSubnet2Prefix')]"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[variables('appStorageName')]",
+      "type": "Microsoft.Storage/storageAccounts",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "appStorage"
+      },
+      "properties": {
+        "accountType": "[parameters('appStorageType')]"
+      }
+    },
+    {
+      "name": "[variables('appVMNicName')]",
+      "type": "Microsoft.Network/networkInterfaces",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/virtualNetworks', 'appVnet')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', variables('appPublicIPName'))]"
+      ],
+      "tags": {
+        "displayName": "appVMNic"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "ipconfig1",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[variables('appVMSubnetRef')]"
+              },
+              "publicIPAddress": {
+                "id": "[resourceId('Microsoft.Network/publicIPAddresses', variables('appPublicIPName'))]"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "[parameters('appVMName')]",
+      "type": "Microsoft.Compute/virtualMachines",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [
+        "[resourceId('Microsoft.Storage/storageAccounts', variables('appStorageName'))]",
+        "[resourceId('Microsoft.Network/networkInterfaces', variables('appVMNicName'))]"
+      ],
+      "tags": {
+        "displayName": "appVM"
+      },
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[variables('appVMVmSize')]"
+        },
+        "osProfile": {
+          "computerName": "[parameters('appVMName')]",
+          "adminUsername": "[parameters('appVMAdminUsername')]",
+          "adminPassword": "[parameters('appVMAdminPassword')]"          
+        },
+        "storageProfile": {
+          "imageReference": {
+            "publisher": "[variables('appVMImagePublisher')]",
+            "offer": "[variables('appVMImageOffer')]",
+            "sku": "[parameters('appVMWindowsOSVersion')]",
+            "version": "latest"
+          },
+          "osDisk": {
+            "name": "appVMOSDisk",
+            "vhd": {              
+              "uri": "[concat(reference(concat('Microsoft.Storage/storageAccounts/', variables('appStorageName')), '2015-06-15').primaryEndpoints.blob, variables('appVMStorageAccountContainerName'),'/',variables('appVMOSDiskName'),'.vhd')]"
+            },
+            "caching": "ReadWrite",
+            "createOption": "FromImage"
+          }
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', variables('appVMNicName'))]"
+            }
+          ]
+        }
+      },
+      "resources": [
+        {
+          "name": "Microsoft.Powershell.DSC",
+          "type": "extensions",
+          "location": "[resourceGroup().location]",
+          "apiVersion": "2015-06-15",
+          "dependsOn": [
+            "[resourceId('Microsoft.Compute/virtualMachines', parameters('appVMName'))]"
+          ],
+          "tags": {
+            "displayName": "appDSC"
+          },
+          "properties": {
+            "publisher": "Microsoft.Powershell",
+            "type": "DSC",
+            "typeHandlerVersion": "2.9",
+            "autoUpgradeMinorVersion": true,
+            "forceUpdateTag": "[parameters('appDSCUpdateTagVersion')]",
+            "settings": {
+              "configuration": {
+                "url": "[concat(parameters('_artifactsLocation'), '/', variables('appDSCArchiveFolder'), '/', variables('appDSCArchiveFileName'))]",
+                "script": "appDSC.ps1",
+                "function": "Main"
+              },
+              "configurationArguments": {
+                "nodeName": "[parameters('appVMName')]",
+                "webDeployPackage": "[parameters('appWebPackage')]"                
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "[variables('appPublicIPName')]",
+      "type": "Microsoft.Network/publicIPAddresses",
+      "location": "[resourceGroup().location]",
+      "apiVersion": "2015-06-15",
+      "dependsOn": [],
+      "tags": {
+        "displayName": "appPublicIP"
+      },
+      "properties": {
+        "publicIPAllocationMethod": "Dynamic",
+        "dnsSettings": {
+          "domainNameLabel": "[parameters('appPublicIPDnsName')]"
+        }
+      }
+    }
+  ],
+  "outputs": {
+  }
+}
