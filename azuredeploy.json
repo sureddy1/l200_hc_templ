@@ -70,12 +70,12 @@
     },
     "appVMVmSize": {
       "type": "string",
-      "defaultValue": "Standard_B2",
+      "defaultValue": "Standard_B2s",
       "allowedValues": [
-        "Standard_B1",
-        "Standard_B2",
-        "Standard_B4",
-        "Standard_B8"
+        "Standard_B1s",
+        "Standard_B2s",
+        "Standard_B4ms",
+        "Standard_B8ms"
       ],
       "metadata": {
         "description": "Set this value for the VM size"

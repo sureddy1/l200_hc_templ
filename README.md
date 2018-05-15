@@ -1,7 +1,7 @@
 # l200_hc_templ
 
 
-# Deployment of a Windows VM, configure windows featurtes like IIS, .Net framework etc., download application deployment packages using DSC
+# Deployment of a Windows VM, configure windows featurtes like IIS using DSC
 
 <a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fsureddy1%2Fl200_hc_templ%2Fmaster%2Fazuredeploy.json" target="_blank">
 <img src="https://raw.githubusercontent.com/sureddy1/l200_hc_templ/master/images/deploytoazure.png"/>
