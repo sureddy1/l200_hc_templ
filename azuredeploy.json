@@ -63,7 +63,7 @@
     },
     "appWebPackage": {
       "type": "string",
-      "defaultValue": "https://bitbucket.org/PrashantPratap/arm/src/master/PublishOutput.zip",
+      "defaultValue": "https://raw.githubusercontent.com/sureddy1/l200_hc_templ/master/code/code.zip",
       "metadata": {
         "description": "Set this value for the signed uri to download the deployment package"
       }

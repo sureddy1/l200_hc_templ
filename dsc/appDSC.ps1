@@ -130,15 +130,15 @@ Node $nodeName
 
 	
 		# Copy the website content 
-		File WebContent 
-		{ 
-			Ensure          = "Present" 
-			SourcePath      = "C:\WebApp"
-			DestinationPath = "C:\Inetpub\wwwroot"
-			Recurse         = $true 
-			Type            = "Directory" 
-			DependsOn       = "[Script]DeployWebPackage" 
-		}		
+		#File WebContent 
+		#{ 
+		#	Ensure          = "Present" 
+		#	SourcePath      = "C:\WebApp"
+		#	DestinationPath = "C:\Inetpub\wwwroot"
+		#	Recurse         = $true 
+		#	Type            = "Directory" 
+		#	DependsOn       = "[Script]DeployWebPackage" 
+		#}		
 		
   }
 }
